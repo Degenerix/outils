@@ -1,0 +1,1174 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PCA Soins Palliatifs – v2.0</title>
+  <style>
+    :root {
+      --gap: 12px;
+      --conv-blue: #1e40af;
+      --conv-blue-light: #dbeafe;
+      --conv-blue-mid: #93c5fd;
+      --conv-bg: #f0f5ff;
+      --conv-border: #3b82f6;
+    }
+    html, body, button, input, select, textarea {
+      font-family: "Times New Roman", Times, serif;
+      font-size: 12pt;
+      color: #111827;
+    }
+    body { margin: 24px; background:#fafafa; }
+    .wrap { max-width: 860px; margin: 0 auto; }
+
+    /* ── En-tête page ── */
+    .page-header {
+      display:flex; align-items:baseline; justify-content:space-between;
+      border-bottom: 2px solid #111827; padding-bottom: 8px; margin-bottom: 18px;
+    }
+    .page-header h1 {
+      font-size: 14pt; font-weight: 700; letter-spacing: .04em;
+      margin: 0; text-transform: uppercase;
+    }
+    .version-badge {
+      font-size: 9pt; font-weight: 700; color: #fff;
+      background: #374151; border-radius: 20px;
+      padding: 2px 10px; letter-spacing:.05em;
+    }
+
+    h2 { font-size: 13pt; font-weight: 700; margin: 0 0 10px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    label { display:block; font-weight:700; margin:10px 0 6px; }
+    input, select {
+      width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:10px;
+      background: #ffffff;
+    }
+    input:focus, select:focus {
+      outline: 2px solid var(--conv-border); outline-offset: 1px;
+    }
+    .muted { color:#6b7280; font-style: italic; }
+
+    /* ── Blocs prescription ── */
+    .block {
+      border:1px solid #e5e7eb; border-radius:12px; padding:14px;
+      margin-bottom:14px; background:#fff;
+      box-shadow: 0 1px 3px #0001;
+    }
+    .block.is-patch { border-left: 4px solid #0891b2; background: #f0f9ff; }
+    .buttons { display:flex; gap:10px; flex-wrap:wrap; margin: 12px 0 0; }
+    button {
+      padding:10px 16px; border:1px solid #11182720; border-radius:10px;
+      font-weight:700; cursor:pointer; background:#111827; color:#fff;
+      transition: opacity .15s;
+    }
+    button:hover { opacity:.85; }
+    button.secondary { background:#fff; color:#111827; border-color:#d1d5db; }
+    button.linklike { background:transparent; color:#6b7280; border:none; padding:0; text-decoration:underline; cursor:pointer; font-weight:400; }
+    .preview {
+      margin-top:16px; padding:16px; border:1px solid #e5e7eb; border-radius:12px; background:#fff;
+      line-height: 1.4; white-space: pre-wrap;
+      box-shadow: 0 1px 3px #0001;
+    }
+    textarea#plain { position:absolute; left:-9999px; top:-9999px; height:0; width:0; opacity:0; }
+    #richSource { position:absolute; left:-9999px; top:-9999px; opacity:0; }
+    .headerRow { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .removeBtn { font-size: 11pt; }
+    .anticipe-row { display:flex; align-items:center; gap:8px; margin:8px 0 4px; }
+    .anticipe-row input[type="checkbox"] { width:auto; margin:0; accent-color:#6366f1; cursor:pointer; }
+    .anticipe-row label { display:inline; font-weight:400; margin:0; cursor:pointer; }
+    .block.is-anticipe { border-left:4px solid #6366f1; background:#f5f3ff; }
+
+    /* ══ CONVERTISSEUR – encart professionnel ══ */
+    .converter {
+      border: 2px solid var(--conv-border);
+      border-radius: 14px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px #3b82f620;
+    }
+    .converter-header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      padding: 12px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; user-select: none;
+    }
+    .converter-header-left { display:flex; align-items:center; gap:10px; }
+    .converter-header h2 {
+      margin:0; color:#fff; font-size:13pt; letter-spacing:.03em;
+    }
+    .converter-header .conv-version {
+      font-size:9pt; color:#bfdbfe; font-weight:400; font-style:italic;
+    }
+    .converter-header .conv-sfap {
+      font-size:9pt; background:#ffffff25; color:#e0f2fe;
+      border-radius:20px; padding:2px 9px; font-weight:700; letter-spacing:.04em;
+    }
+    .converter-header .chevron {
+      color:#bfdbfe; font-size:13pt; transition:transform 0.2s;
+    }
+    .converter-header .chevron.open { transform:rotate(180deg); }
+
+    .converter-body {
+      padding: 16px 18px; background: var(--conv-bg);
+    }
+    .converter-body.hidden { display:none; }
+
+    .conv-sep {
+      height:1px; background: var(--conv-blue-mid); opacity:.4;
+      margin: 14px 0;
+    }
+
+    .conv-result {
+      margin-top:12px; padding:14px 16px;
+      border: 1px solid var(--conv-blue-mid);
+      border-left: 4px solid var(--conv-border);
+      border-radius: 10px;
+      background:#fff; line-height:1.65;
+    }
+    .conv-result .val { font-weight:700; font-size:13pt; color: var(--conv-blue); }
+    .conv-result .detail { color:#6b7280; font-size:11pt; }
+    .conv-result .patch-sugg {
+      color:#0369a1; font-size:11pt; background:#e0f2fe;
+      border-radius:6px; padding:4px 10px; display:inline-block; margin-top:6px;
+      border-left: 3px solid #0891b2;
+    }
+    .conv-arrow { display:flex; align-items:center; justify-content:center; font-size:22pt; padding-top:28px; color: var(--conv-border); }
+    .inject-row { margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .inject-row select { width:auto; min-width:140px; }
+
+    /* Table des ratios */
+    .ratio-table { margin-top:14px; border-collapse:collapse; width:100%; font-size:10.5pt; }
+    .ratio-table th, .ratio-table td { border:1px solid #bfdbfe; padding:6px 10px; text-align:center; }
+    .ratio-table th { background:#1e3a8a; color:#fff; font-weight:700; }
+    .ratio-table tr:nth-child(even) td { background:#eff6ff; }
+    .ratio-table td.fent { background:#fef9c3; font-style:italic; font-size:10pt; color:#92400e; }
+
+    /* Badge patch */
+    .patch-count-box {
+      padding:10px 12px; border:1px solid #7dd3fc; border-radius:10px;
+      background:#f0f9ff; font-weight:700; min-height:44px;
+      display:flex; align-items:center; color:#0369a1;
+    }
+    #interdoseSection { }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="page-header">
+    <h1>Prescription PCA – Soins Palliatifs</h1>
+    <span class="version-badge">v2.0 – fév. 2026</span>
+  </div>
+
+  <!-- ══════════ CONVERTISSEUR ÉQUIANALG&Eacute;SIQUE ══════════ -->
+  <div class="converter" id="converterBox">
+    <div class="converter-header" id="converterToggle">
+      <div class="converter-header-left">
+        <h2>⚖ Convertisseur équianalg&eacute;sique</h2>
+        <span class="conv-sfap">SFAP</span>
+        <span class="conv-version">Morphine PO · Oxycodone · Fentanyl TTS</span>
+      </div>
+      <span class="chevron open" id="chevron">▲</span>
+    </div>
+    <div class="converter-body" id="converterBody">
+
+      <p class="muted" style="margin:0 0 10px;">Ratios SFAP – Morphine PO comme référence. Vérifier systématiquement selon le contexte clinique.</p>
+
+      <div style="display:grid; grid-template-columns:5fr auto 5fr; gap:8px;">
+        <!-- SOURCE -->
+        <div>
+          <label for="convSrcMol">Source : molécule</label>
+          <select id="convSrcMol">
+            <option value="morphine">Morphine</option>
+            <option value="oxycodone">Oxycodone</option>
+            <option value="fentanyl">Fentanyl TTS (patch)</option>
+          </select>
+          <label for="convSrcRoute" id="convSrcRouteLabel">Voie source</label>
+          <select id="convSrcRoute">
+            <option value="PO">Per os (PO)</option>
+            <option value="SC">Sous-cutanée (SC)</option>
+            <option value="IV">Intra-veineuse (IV)</option>
+          </select>
+          <label for="convSrcDose" id="convSrcDoseLabel">Dose /24 h (mg)</label>
+          <input id="convSrcDose" type="text" inputmode="decimal" placeholder="ex. 60" />
+        </div>
+
+        <!-- ARROW -->
+        <div class="conv-arrow">→</div>
+
+        <!-- TARGET -->
+        <div>
+          <label for="convTgtMol">Cible : molécule</label>
+          <select id="convTgtMol">
+            <option value="morphine">Morphine</option>
+            <option value="oxycodone" selected>Oxycodone</option>
+            <option value="fentanyl">Fentanyl TTS (patch)</option>
+          </select>
+          <label for="convTgtRoute" id="convTgtRouteLabel">Voie cible</label>
+          <select id="convTgtRoute">
+            <option value="PO">Per os (PO)</option>
+            <option value="SC" selected>Sous-cutanée (SC)</option>
+            <option value="IV">Intra-veineuse (IV)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Interdose (masquée si cible = fentanyl TTS) -->
+      <div id="interdoseSection">
+        <div class="grid" style="margin-top:6px;">
+          <div>
+            <label for="convInterdoseFrac">Interdose (fraction de la dose /24 h)</label>
+            <select id="convInterdoseFrac">
+              <option value="0.1">1/10e (10 %)</option>
+              <option value="0.166667">1/6e (≈ 17 %)</option>
+              <option value="0.2">1/5e (20 %)</option>
+              <option value="__CUSTOM__">Personnalisé…</option>
+              <option value="0">Pas d'interdose</option>
+            </select>
+          </div>
+          <div id="convCustomFracWrap" style="display:none;">
+            <label for="convCustomFrac">Fraction personnalisée (%)</label>
+            <input id="convCustomFrac" type="text" inputmode="decimal" placeholder="ex. 15" />
+          </div>
+          <div>
+            <label for="convRefractSugg">Période réfractaire suggérée (min)</label>
+            <select id="convRefractSugg">
+              <option value="15">15 min</option>
+              <option value="20">20 min</option>
+              <option value="30" selected>30 min</option>
+              <option value="60">60 min</option>
+              <option value="__CUSTOM_R__">Personnalisé…</option>
+            </select>
+          </div>
+          <div id="convCustomRefractWrap" style="display:none;">
+            <label for="convCustomRefract">Période réfractaire (min)</label>
+            <input id="convCustomRefract" type="text" inputmode="numeric" placeholder="ex. 45" />
+          </div>
+        </div>
+      </div>
+
+      <div class="conv-sep"></div>
+      <div class="buttons" style="margin-top:0px;">
+        <button id="convCalc">Convertir</button>
+        <button id="convShowTable" class="secondary">Voir la table des ratios</button>
+      </div>
+
+      <!-- Résultat -->
+      <div class="conv-result" id="convResult" style="display:none;"></div>
+
+      <!-- Injection vers prescription -->
+      <div class="inject-row" id="injectRow" style="display:none;">
+        <button id="injectBtn" class="secondary">↓ Injecter dans</button>
+        <select id="injectTarget"></select>
+        <span class="muted" style="font-size:10.5pt;">(pré-remplit produit, voie, dose et paramètres)</span>
+      </div>
+
+      <!-- Table des ratios -->
+      <div id="ratioTableWrap" style="display:none;">
+        <table class="ratio-table">
+          <thead>
+            <tr>
+              <th>Molécule</th>
+              <th>PO</th>
+              <th>SC</th>
+              <th>IV</th>
+              <th>TTS (patch)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:700; text-align:left; padding-left:10px;">Morphine</td>
+              <td>×1</td><td>×2</td><td>×3</td><td class="fent">—</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; text-align:left; padding-left:10px;">Oxycodone</td>
+              <td>×2</td><td>×4</td><td>×4</td><td class="fent">—</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700; text-align:left; padding-left:10px;">Fentanyl TTS</td>
+              <td class="fent">—</td><td class="fent">—</td><td class="fent">—</td>
+              <td style="font-weight:700; background:#fef9c3;">2,4 mg/µg·h⁻¹</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="muted" style="margin:6px 0 0; font-size:10pt;">
+          Facteur = équivalent morphine PO par mg (ou par µg/h pour le fentanyl TTS).<br>
+          Fentanyl TTS : 1 µg/h ≈ 2,4 mg morphine PO/24 h (SFAP). Ex. : patch 25 µg/h ≈ morphine PO 60 mg/24 h.<br>
+          Conversion : dose source × facteur source ÷ facteur cible = dose cible.
+        </p>
+      </div>
+
+    </div>
+  </div>
+  <!-- ══════════ FIN CONVERTISSEUR ══════════ -->
+
+  <div id="blocks"></div>
+
+  <div class="buttons">
+    <button id="add" class="secondary">Ajouter un produit</button>
+    <button id="gen">Générer le texte</button>
+    <button id="copy" class="secondary">Copier (texte brut)</button>
+    <button id="copyRich" class="secondary">Copier avec mise en forme</button>
+    <button id="reset" class="secondary">Réinitialiser</button>
+  </div>
+
+  <div id="preview" class="preview" aria-live="polite"></div>
+  <textarea id="plain" readonly></textarea>
+  <div id="richSource" contenteditable="true" style="font-family:'Times New Roman', Times, serif; font-size:12pt; line-height:1.15;"></div>
+
+  <p class="muted">NB : maximum 3 produits. La copie riche conserve le gras et les retours de ligne, sans couleurs.</p>
+
+  <div style="margin-top:24px; padding:10px 14px; border-top:1px solid #e5e7eb; font-size:9.5pt; color:#9ca3af; display:flex; justify-content:space-between; align-items:center;">
+    <span>Outil de prescription PCA – Soins Palliatifs</span>
+    <span>v2.0 · Ratios SFAP · Usage interne · Vérifier selon contexte clinique</span>
+  </div>
+</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', function(){
+
+  /* ════════════════════════════════════════════════
+     CONVERTISSEUR ÉQUIANALG&Eacute;SIQUE
+  ════════════════════════════════════════════════ */
+
+  // Facteurs : mg morphine PO / mg de cette molécule via cette voie
+  // Exception fentanyl TTS : mg morphine PO / µg·h⁻¹ de fentanyl (= 2,4)
+  const EQ_FACTORS = {
+    morphine:  { PO: 1, SC: 2, IV: 3 },
+    oxycodone: { PO: 2, SC: 4, IV: 4 },
+    fentanyl:  { TTS: 2.4 }
+  };
+
+  const MOL_LABELS = {
+    morphine:  'MORPHINE',
+    oxycodone: 'OXYCODONE',
+    fentanyl:  'FENTANYL TTS'
+  };
+
+  const ROUTE_LABELS = { PO: 'PO', SC: 'SC', IV: 'IV', TTS: 'TTS' };
+
+  const ROUTE_TO_VOIE = {
+    SC:  'Sous-cutanée continue via pompe PCA',
+    IV:  'Intra-veineuse continue via pompe PCA',
+    TTS: 'Transdermique (patch)'
+  };
+
+  // Tailles disponibles Durogesic (µg/h)
+  const PATCH_SIZES = [12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100];
+
+  function suggestPatches(doseUgH) {
+    let bestDiff = Infinity, bestCombo = null;
+    // Patch unique
+    for (const s of PATCH_SIZES) {
+      if (Math.abs(s - doseUgH) < bestDiff) {
+        bestDiff = Math.abs(s - doseUgH);
+        bestCombo = [s];
+      }
+    }
+    // Combinaison de 2 patchs
+    for (const s1 of PATCH_SIZES) {
+      for (const s2 of PATCH_SIZES) {
+        if (s2 < s1) continue;
+        const t = s1 + s2;
+        if (Math.abs(t - doseUgH) < bestDiff) {
+          bestDiff = Math.abs(t - doseUgH);
+          bestCombo = [s1, s2];
+        }
+      }
+    }
+    // Combinaison de 3 patchs
+    for (const s1 of PATCH_SIZES) {
+      for (const s2 of PATCH_SIZES) {
+        for (const s3 of PATCH_SIZES) {
+          if (s2 < s1 || s3 < s2) continue;
+          const t = s1 + s2 + s3;
+          if (Math.abs(t - doseUgH) < bestDiff) {
+            bestDiff = Math.abs(t - doseUgH);
+            bestCombo = [s1, s2, s3];
+          }
+        }
+      }
+    }
+    const totalCombo = bestCombo.reduce((a, b) => a + b, 0);
+    return { combo: bestCombo, total: totalCombo, diff: bestDiff };
+  }
+
+  // ── Routes standard vs fentanyl ──────────────────
+  function routeOptsStd(selected) {
+    return [
+      `<option value="PO"${selected==='PO'?' selected':''}>Per os (PO)</option>`,
+      `<option value="SC"${selected==='SC'?' selected':''}>Sous-cutanée (SC)</option>`,
+      `<option value="IV"${selected==='IV'?' selected':''}>Intra-veineuse (IV)</option>`
+    ].join('');
+  }
+
+  function updateSrcMolUI() {
+    const mol = document.getElementById('convSrcMol').value;
+    const routeSel = document.getElementById('convSrcRoute');
+    const doseLabel = document.getElementById('convSrcDoseLabel');
+    const srcDoseInput = document.getElementById('convSrcDose');
+    if (mol === 'fentanyl') {
+      routeSel.innerHTML = '<option value="TTS">Transdermique (TTS/patch)</option>';
+      doseLabel.textContent = 'Dose du patch (µg/h)';
+      srcDoseInput.placeholder = 'ex. 25';
+    } else {
+      const cur = routeSel.value;
+      const keep = (cur === 'SC' || cur === 'IV') ? cur : 'PO';
+      routeSel.innerHTML = routeOptsStd(keep);
+      doseLabel.textContent = 'Dose /24 h (mg)';
+      srcDoseInput.placeholder = 'ex. 60';
+    }
+  }
+
+  function updateTgtMolUI() {
+    const mol = document.getElementById('convTgtMol').value;
+    const routeSel = document.getElementById('convTgtRoute');
+    const interdoseSection = document.getElementById('interdoseSection');
+    if (mol === 'fentanyl') {
+      routeSel.innerHTML = '<option value="TTS">Transdermique (TTS/patch)</option>';
+      interdoseSection.style.display = 'none';
+    } else {
+      const cur = routeSel.value;
+      const keep = (cur === 'SC' || cur === 'IV') ? cur : 'SC';
+      routeSel.innerHTML = routeOptsStd(keep);
+      interdoseSection.style.display = '';
+    }
+  }
+
+  document.getElementById('convSrcMol').addEventListener('change', updateSrcMolUI);
+  document.getElementById('convTgtMol').addEventListener('change', updateTgtMolUI);
+
+  // Toggle convertisseur
+  document.getElementById('converterToggle').addEventListener('click', function(){
+    const body = document.getElementById('converterBody');
+    const chev = document.getElementById('chevron');
+    const hidden = body.classList.toggle('hidden');
+    chev.classList.toggle('open', !hidden);
+    chev.textContent = hidden ? '▼' : '▲';
+  });
+
+  // Toggle table des ratios
+  document.getElementById('convShowTable').addEventListener('click', function(){
+    const wrap = document.getElementById('ratioTableWrap');
+    const visible = wrap.style.display !== 'none';
+    wrap.style.display = visible ? 'none' : '';
+    this.textContent = visible ? 'Voir la table des ratios' : 'Masquer la table';
+  });
+
+  // Custom fraction
+  const convFracSel = document.getElementById('convInterdoseFrac');
+  const convFracWrap = document.getElementById('convCustomFracWrap');
+  convFracSel.addEventListener('change', function(){
+    convFracWrap.style.display = this.value === '__CUSTOM__' ? '' : 'none';
+  });
+
+  // Custom réfractaire
+  const convRefractSel = document.getElementById('convRefractSugg');
+  const convRefractWrap = document.getElementById('convCustomRefractWrap');
+  convRefractSel.addEventListener('change', function(){
+    convRefractWrap.style.display = this.value === '__CUSTOM_R__' ? '' : 'none';
+  });
+
+  let lastConversion = null;
+
+  document.getElementById('convCalc').addEventListener('click', function(){
+    const srcMol   = document.getElementById('convSrcMol').value;
+    const srcRoute = document.getElementById('convSrcRoute').value;
+    const tgtMol   = document.getElementById('convTgtMol').value;
+    const tgtRoute = document.getElementById('convTgtRoute').value;
+    const srcDose  = parseFr(document.getElementById('convSrcDose').value);
+
+    if (!Number.isFinite(srcDose) || srcDose <= 0) {
+      alert('Veuillez saisir une dose source valide (> 0).');
+      return;
+    }
+
+    const fSrc = EQ_FACTORS[srcMol][srcRoute];
+    const fTgt = EQ_FACTORS[tgtMol][tgtRoute];
+
+    // Équivalent morphine PO
+    const morphinePOeq = srcDose * fSrc;
+    const tgtDoseRaw   = morphinePOeq / fTgt;
+    const tgtDoseRound = Math.round(tgtDoseRaw * 100) / 100;
+
+    const srcUnitLabel = (srcMol === 'fentanyl') ? 'µg/h' : 'mg/24 h';
+    const tgtUnitLabel = (tgtMol === 'fentanyl') ? 'µg/h' : 'mg/24 h';
+
+    // ── Résultat principal ─────────────
+    const srcLabel = MOL_LABELS[srcMol] + ' ' + ROUTE_LABELS[srcRoute];
+    const tgtLabel = MOL_LABELS[tgtMol] + ' ' + ROUTE_LABELS[tgtRoute];
+
+    let html =
+      '<span class="val">' + srcLabel + ' ' + fmtNum(srcDose, 1) + ' ' + srcUnitLabel +
+      '  →  ' + tgtLabel + ' ' + fmtNum(tgtDoseRound, 2) + ' ' + tgtUnitLabel + '</span><br>' +
+      '<span class="detail">Équivalent morphine PO : ' + fmtNum(morphinePOeq, 1) + ' mg/24 h' +
+      '  ·  Ratio : ×' + fSrc + ' ÷ ×' + fTgt + '</span>';
+
+    // ── Suggestion taille de patchs Durogesic ─────
+    if (tgtMol === 'fentanyl') {
+      const sugg = suggestPatches(tgtDoseRound);
+      const patchLabel = sugg.combo.join(' + ') + ' µg/h';
+      let diffStr = '';
+      if (sugg.diff > 0.1) {
+        diffStr = ' (≈ ' + sugg.total + ' µg/h, écart : ' + sugg.diff.toFixed(1) + ' µg/h)';
+      }
+      html += '<br><br><span class="patch-sugg">🩹 Patch(s) Durogesic suggéré(s) : ' +
+        patchLabel + diffStr + '</span><br>' +
+        '<span class="detail" style="font-size:10pt;">Tailles disponibles Durogesic® : 12,5 – 25 – 37,5 – 50 – 62,5 – 75 – 87,5 – 100 µg/h</span>';
+    }
+
+    // ── Interdose (uniquement pour cibles non-TTS) ─
+    let bolus = 0, refract = 30, frac = 0;
+    if (tgtMol !== 'fentanyl') {
+      let fracVal = convFracSel.value;
+      if (fracVal === '__CUSTOM__') {
+        frac = parseFr(document.getElementById('convCustomFrac').value);
+        if (!Number.isFinite(frac) || frac < 0 || frac > 100) {
+          alert('Fraction personnalisée invalide (0–100 %).'); return;
+        }
+        frac = frac / 100;
+      } else {
+        frac = parseFloat(fracVal) || 0;
+      }
+
+      let refrVal = convRefractSel.value;
+      if (refrVal === '__CUSTOM_R__') {
+        refract = parseFr(document.getElementById('convCustomRefract').value);
+        if (!Number.isFinite(refract) || refract <= 0) {
+          alert('Période réfractaire invalide.'); return;
+        }
+      } else {
+        refract = parseInt(refrVal, 10) || 30;
+      }
+
+      bolus = Math.round(tgtDoseRound * frac * 100) / 100;
+      const nbBolusMax = refract > 0 ? Math.floor((24*60)/refract) : 0;
+      const doseTotale24 = tgtDoseRound + bolus * nbBolusMax;
+
+      let fracLabel = frac === 0 ? "pas d'interdose"
+        : Math.abs(frac - 0.1) < 1e-6 ? '1/10e'
+        : Math.abs(frac - 1/6) < 1e-4 ? '1/6e'
+        : Math.abs(frac - 0.2) < 1e-6 ? '1/5e'
+        : Math.round(frac*100) + ' %';
+
+      if (frac > 0) {
+        html += '<br><br><span class="val">Interdose (bolus) : ' + fmtNum(bolus, 2) + ' mg</span>' +
+          '<span class="detail">  (' + fracLabel + ' de ' + fmtNum(tgtDoseRound, 2) + ' mg)</span>' +
+          '<br><span class="detail">Période réfractaire : ' + refract + ' min  ·  ' +
+          'Max bolus/24 h : ' + Math.floor((24*60)/refract) +
+          '  ·  Dose totale max/24 h : ' + fmtNum(doseTotale24, 2) + ' mg</span>';
+      }
+    }
+
+    const resultDiv = document.getElementById('convResult');
+    resultDiv.innerHTML = html;
+    resultDiv.style.display = '';
+
+    // Store pour injection
+    lastConversion = {
+      mol:      tgtMol,
+      molLabel: MOL_LABELS[tgtMol],
+      route:    tgtRoute,
+      voie:     ROUTE_TO_VOIE[tgtRoute] || '',
+      dose24:   tgtDoseRound,
+      bolus:    bolus,
+      refract:  refract,
+      isPatch:  (tgtMol === 'fentanyl')
+    };
+
+    // Inject row : SC / IV uniquement (patch injectible aussi pour convertir uniquement)
+    const injectRow = document.getElementById('injectRow');
+    if (tgtRoute === 'SC' || tgtRoute === 'IV' || tgtRoute === 'TTS') {
+      injectRow.style.display = '';
+      refreshInjectTargets();
+    } else {
+      injectRow.style.display = 'none';
+    }
+  });
+
+  function refreshInjectTargets(){
+    const sel = document.getElementById('injectTarget');
+    sel.innerHTML = '';
+    blocksContainer.querySelectorAll('.block').forEach(function(b, idx){
+      const opt = document.createElement('option');
+      opt.value = b.id;
+      opt.textContent = 'Produit ' + (idx+1);
+      sel.appendChild(opt);
+    });
+    if (blockCount < MAX_BLOCKS){
+      const opt = document.createElement('option');
+      opt.value = '__NEW__';
+      opt.textContent = '+ Nouveau produit';
+      sel.appendChild(opt);
+    }
+  }
+
+  document.getElementById('injectBtn').addEventListener('click', function(){
+    if (!lastConversion) return;
+    const target = document.getElementById('injectTarget').value;
+    let blockId;
+    if (target === '__NEW__') { addBlock(); blockId = 'block' + blockCount; }
+    else { blockId = target; }
+    const num = blockId.replace('block','');
+
+    // Produit
+    const prodSel   = document.getElementById('produit' + num + '_select');
+    const prodOther = document.getElementById('produit' + num + '_autre');
+    if (prodSel) {
+      let found = false;
+      for (let j = 0; j < prodSel.options.length; j++) {
+        if (prodSel.options[j].value === lastConversion.molLabel || prodSel.options[j].text === lastConversion.molLabel) {
+          prodSel.selectedIndex = j; found = true; break;
+        }
+      }
+      if (!found) {
+        for (let j = 0; j < prodSel.options.length; j++) {
+          if (prodSel.options[j].value === '__AUTRE__') { prodSel.selectedIndex = j; break; }
+        }
+        prodSel.dispatchEvent(new Event('change'));
+        if (prodOther) prodOther.value = lastConversion.molLabel;
+      }
+      prodSel.dispatchEvent(new Event('change'));
+    }
+
+    // Voie
+    const voieSel   = document.getElementById('voie' + num + '_select');
+    const voieOther = document.getElementById('voie' + num + '_autre');
+    if (voieSel && lastConversion.voie) {
+      let found = false;
+      for (let j = 0; j < voieSel.options.length; j++) {
+        if (voieSel.options[j].value === lastConversion.voie || voieSel.options[j].text === lastConversion.voie) {
+          voieSel.selectedIndex = j; found = true; break;
+        }
+      }
+      if (!found) {
+        for (let j = 0; j < voieSel.options.length; j++) {
+          if (voieSel.options[j].value === '__AUTRE__') { voieSel.selectedIndex = j; break; }
+        }
+        voieSel.dispatchEvent(new Event('change'));
+        if (voieOther) voieOther.value = lastConversion.voie;
+      }
+      voieSel.dispatchEvent(new Event('change'));
+    }
+
+    // Champs PCA ou Patch
+    if (lastConversion.isPatch) {
+      const pd = document.getElementById('patchDose' + num);
+      if (pd) pd.value = String(lastConversion.dose24).replace('.', ',');
+    } else {
+      const d24i = document.getElementById('dose24' + num);
+      if (d24i) d24i.value = String(lastConversion.dose24).replace('.', ',');
+      const boli = document.getElementById('bolus' + num);
+      if (boli && lastConversion.bolus > 0) boli.value = String(lastConversion.bolus).replace('.', ',');
+      const refri = document.getElementById('refract' + num);
+      if (refri && lastConversion.refract > 0) refri.value = String(lastConversion.refract);
+    }
+
+    // Feedback visuel
+    const blk = document.getElementById(blockId);
+    if (blk) {
+      blk.style.outline = '2px solid #3b82f6';
+      blk.scrollIntoView({ behavior:'smooth', block:'center' });
+      setTimeout(function(){ blk.style.outline = ''; }, 2000);
+    }
+    const self = this;
+    self.textContent = '✅ Injecté !';
+    setTimeout(function(){ self.textContent = '↓ Injecter dans'; }, 1200);
+  });
+
+
+  /* ════════════════════════════════════════════════
+     PRESCRIPTION
+  ════════════════════════════════════════════════ */
+
+  const MAX_BLOCKS = 3;
+  const blocksContainer = document.getElementById('blocks');
+
+  function parseFr(s){
+    if (s == null) return NaN;
+    s = (''+s).trim().replace(/\s+/g,'').replace(',','.');
+    if (!s) return NaN;
+    return Number(s);
+  }
+  function round1(x){ return Math.round(x*10)/10; }
+  function toFixedLocal(x,n){ return Number.isFinite(x) ? x.toFixed(n) : ''; }
+  function fmtNum(x,n){ return Number.isFinite(x) ? x.toFixed(n).replace('.',',') : ''; }
+  function fmtFrFixed(x,unit,n){
+    if (!Number.isFinite(x)) return '';
+    return toFixedLocal(x,n).replace('.',',') + (unit ? ' ' + unit : '');
+  }
+
+  function intToFr(n){
+    n = Math.floor(Math.abs(n));
+    const u = ['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf'];
+    const t10 = ['dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'];
+    const d = ['','dix','vingt','trente','quarante','cinquante','soixante','soixante','quatre-vingt','quatre-vingt'];
+    if (n<10) return u[n];
+    if (n<20) return t10[n-10];
+    if (n<100){
+      let tens=Math.floor(n/10),ones=n%10;
+      if (tens===7||tens===9){
+        if(ones===0) return tens===7?'soixante-dix':'quatre-vingt-dix';
+        return (tens===7?'soixante':'quatre-vingt')+'-'+t10[ones];
+      }
+      if (tens===8&&ones===0) return 'quatre-vingts';
+      if (ones===1&&tens>=2&&tens<=6) return d[tens]+' et un';
+      return d[tens]+(ones?'-'+u[ones]:'');
+    }
+    if (n<1000){
+      let h=Math.floor(n/100),r=n%100;
+      let c=h===1?'cent':intToFr(h)+' cent';
+      if(r===0&&h>1) c+='s';
+      return c+(r?' '+intToFr(r):'');
+    }
+    if(n<10000){
+      let t=Math.floor(n/1000),r=n%1000;
+      let m=t===1?'mille':intToFr(t)+' mille';
+      return m+(r?' '+intToFr(r):'');
+    }
+    return String(n);
+  }
+  function decimalToWordsFR(x){
+    let abs=Math.abs(x),ip=Math.floor(abs+1e-12);
+    let frac=Math.round((abs-ip)*1000)/1000;
+    if(frac<1e-9) return intToFr(ip);
+    let fs=abs.toString().split('.')[1]||'';
+    const digs=['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf'];
+    return intToFr(ip)+' virgule '+fs.split('').map(c=>digs[parseInt(c,10)||0]).join(' ');
+  }
+  function decimalToWordsFromFixed(str){
+    if(!str) return '';
+    let parts=String(str).split('.');
+    let ip=parseInt(parts[0],10)||0, res=intToFr(ip);
+    if(parts.length>1){
+      let frac=parts[1];
+      if(!/^0+$/.test(frac)){
+        const digs=['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf'];
+        res+=' virgule '+frac.split('').map(c=>digs[parseInt(c,10)||0]).join(' ');
+      }
+    }
+    return res;
+  }
+  function unitWord(x,sing,plur){
+    return Math.abs(x)<1-1e-9||Math.abs(Math.abs(x)-1)<1e-9?sing:plur;
+  }
+  function selectedOrAutre(sel,other){
+    return sel.value==='__AUTRE__'?other.value.trim():sel.value.trim();
+  }
+  function toggleAutre(sel,inp){
+    function upd(){
+      inp.style.display = sel.value==='__AUTRE__' ? '' : 'none';
+      if(sel.value==='__AUTRE__' && !inp.value) inp.placeholder='saisir ici…';
+    }
+    sel.addEventListener('change',upd); upd();
+  }
+
+  // ── Patch helpers ─────────────────────────────
+  function isPatchRoute(voieVal, voieOtherVal){
+    const v = voieVal === '__AUTRE__' ? voieOtherVal : voieVal;
+    return !!(v && (v.toLowerCase().includes('patch')||v.toLowerCase().includes('transderm')));
+  }
+
+  function updateBlockMode(i, patch){
+    const pcaFields   = document.getElementById('pcaFields'+i);
+    const patchFields = document.getElementById('patchFields'+i);
+    const blk = document.getElementById('block'+i);
+    if (pcaFields)   pcaFields.style.display   = patch ? 'none' : '';
+    if (patchFields) patchFields.style.display  = patch ? '' : 'none';
+    if (blk) {
+      blk.classList.toggle('is-patch', patch);
+      // remove anticipe coloration if patch (incompatible visually)
+    }
+    if (patch) updatePatchCount(i);
+  }
+
+  function updatePatchCount(i){
+    const intSel = document.getElementById('patchInterval'+i);
+    if (!intSel) return;
+    const interval = parseInt(intSel.value) || 72;
+    const count = Math.ceil(8*24/interval);
+    const box = document.getElementById('patchCountBox'+i);
+    if (box) box.textContent = intToFr(count) + ' (' + count + ')';
+  }
+
+  // ── Auto-paramétrage selon produit sélectionné ─
+  function autoConfigProduct(i, prodVal){
+    const voieSel   = document.getElementById('voie'+i+'_select');
+    const patchUnit = document.getElementById('patchUnit'+i);
+    const patchIntv = document.getElementById('patchInterval'+i);
+
+    if (prodVal === 'FENTANYL TTS (DUROGESIC)'){
+      // Sélectionner voie transdermique
+      for (let j=0;j<voieSel.options.length;j++){
+        if(voieSel.options[j].value.includes('Transderm')||voieSel.options[j].text.includes('Transder')){
+          voieSel.selectedIndex=j; break;
+        }
+      }
+      voieSel.dispatchEvent(new Event('change'));
+      if(patchUnit) patchUnit.value='µg/h';
+      if(patchIntv) patchIntv.value='72';
+      updatePatchCount(i);
+    } else if (prodVal === 'SCOPOLAMINE TTS (SCOPODERM)'){
+      for (let j=0;j<voieSel.options.length;j++){
+        if(voieSel.options[j].value.includes('Transderm')||voieSel.options[j].text.includes('Transder')){
+          voieSel.selectedIndex=j; break;
+        }
+      }
+      voieSel.dispatchEvent(new Event('change'));
+      if(patchUnit) patchUnit.value='patch';
+      if(patchIntv) patchIntv.value='72';
+      updatePatchCount(i);
+    }
+  }
+
+  let blockCount = 0;
+  function addBlock(){
+    if(blockCount>=MAX_BLOCKS){alert('Maximum 3 produits.');return;}
+    const i=++blockCount;
+    const div=document.createElement('div');
+    div.className='block'; div.id='block'+i;
+    div.innerHTML=`
+      <div class="headerRow">
+        <strong>Produit ${i}</strong>
+        <button type="button" class="linklike removeBtn" data-remove="${i}" ${i===1?'style="display:none"':''}>Supprimer</button>
+      </div>
+      <div class="anticipe-row">
+        <input type="checkbox" id="anticipe${i}" />
+        <label for="anticipe${i}">Prescription anticipée</label>
+      </div>
+
+      <label for="produit${i}_select">Nom du produit</label>
+      <select id="produit${i}_select">
+        <option value="">— choisir —</option>
+        <option>OXYCODONE</option>
+        <option>MORPHINE</option>
+        <option>FENTANYL TTS (DUROGESIC)</option>
+        <option>MIDAZOLAM</option>
+        <option>CLONAZEPAM</option>
+        <option>KETAMINE</option>
+        <option>HALOPERIDOL</option>
+        <option>BUTYLSCOPOLAMINE (SCOBUREN)</option>
+        <option>SCOPOLAMINE TTS (SCOPODERM)</option>
+        <option value="__AUTRE__">AUTRE…</option>
+      </select>
+      <input id="produit${i}_autre" type="text" placeholder="saisir ici…" style="display:none; margin-top:8px;" />
+
+      <label for="voie${i}_select" style="margin-top:10px;">Voie d'administration</label>
+      <select id="voie${i}_select">
+        <option value="">— choisir —</option>
+        <option value="Intra-veineuse continue via pompe PCA">Intra-veineuse continue via pompe PCA</option>
+        <option value="Sous-cutanée continue via pompe PCA">Sous-cutanée continue via pompe PCA</option>
+        <option value="Intra-veineuse discontinue">Intra-veineuse discontinue</option>
+        <option value="Sous-cutanée discontinue">Sous-cutanée discontinue</option>
+        <option value="Transdermique (patch)">Transdermique (patch)</option>
+        <option value="__AUTRE__">AUTRE…</option>
+      </select>
+      <input id="voie${i}_autre" type="text" placeholder="saisir ici…" style="display:none; margin-top:8px;" />
+
+      <!-- Champs PCA / SC-IV -->
+      <div id="pcaFields${i}">
+        <div class="grid" style="margin-top:8px;">
+          <div>
+            <label for="dose24${i}">Dose de base sur 24 h (mg)</label>
+            <input id="dose24${i}" type="text" inputmode="decimal" placeholder="ex. 9,6" />
+          </div>
+        </div>
+        <div class="grid">
+          <div>
+            <label for="bolus${i}">Bolus (mg)</label>
+            <input id="bolus${i}" type="text" inputmode="decimal" placeholder="ex. 0,5" />
+          </div>
+          <div>
+            <label for="refract${i}">Période réfractaire (minutes)</label>
+            <input id="refract${i}" type="text" inputmode="numeric" placeholder="ex. 30" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Champs PATCH -->
+      <div id="patchFields${i}" style="display:none;">
+        <div class="grid" style="margin-top:8px;">
+          <div>
+            <label for="patchDose${i}">Dose</label>
+            <input id="patchDose${i}" type="text" inputmode="decimal" placeholder="ex. 25" />
+          </div>
+          <div>
+            <label for="patchUnit${i}">Unité</label>
+            <select id="patchUnit${i}">
+              <option value="µg/h">µg/h  (fentanyl)</option>
+              <option value="mg">mg</option>
+              <option value="patch">patch(s)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid" style="margin-top:2px;">
+          <div>
+            <label for="patchInterval${i}">Renouvellement</label>
+            <select id="patchInterval${i}">
+              <option value="72">Toutes les 72 h (3 jours)</option>
+              <option value="96">Toutes les 96 h (4 jours)</option>
+              <option value="168">Toutes les 168 h (7 jours)</option>
+            </select>
+          </div>
+          <div>
+            <label>Patchs pour 8 jours</label>
+            <div id="patchCountBox${i}" class="patch-count-box">–</div>
+          </div>
+        </div>
+      </div>
+    `;
+    blocksContainer.appendChild(div);
+
+    const prodSel   = document.getElementById('produit'+i+'_select');
+    const prodOther = document.getElementById('produit'+i+'_autre');
+    const voieSel   = document.getElementById('voie'+i+'_select');
+    const voieOther = document.getElementById('voie'+i+'_autre');
+
+    toggleAutre(prodSel, prodOther);
+    toggleAutre(voieSel, voieOther);
+
+    // Anticipe
+    const anticipeChk = document.getElementById('anticipe'+i);
+    anticipeChk.addEventListener('change', function(){
+      div.classList.toggle('is-anticipe', this.checked);
+    });
+
+    // Voie → mode patch
+    voieSel.addEventListener('change', function(){
+      const patch = isPatchRoute(this.value, voieOther.value);
+      updateBlockMode(i, patch);
+    });
+    voieOther.addEventListener('input', function(){
+      const patch = isPatchRoute('__AUTRE__', this.value);
+      updateBlockMode(i, patch);
+    });
+
+    // Produit → auto-config
+    prodSel.addEventListener('change', function(){
+      autoConfigProduct(i, this.value);
+    });
+
+    // Interval patch → recalc
+    const patchIntv = document.getElementById('patchInterval'+i);
+    patchIntv.addEventListener('change', function(){ updatePatchCount(i); });
+
+    // Supprimer
+    const removeBtn = div.querySelector('[data-remove]');
+    if (removeBtn) removeBtn.addEventListener('click', function(){
+      blocksContainer.removeChild(div);
+    });
+  }
+
+  // Démarrer avec 1 bloc
+  addBlock();
+
+  // ── Build single block text ─────────────────────
+  function buildSingle(i){
+    const prodSel   = document.getElementById('produit'+i+'_select');
+    const prodOther = document.getElementById('produit'+i+'_autre');
+    const voieSel   = document.getElementById('voie'+i+'_select');
+    const voieOther = document.getElementById('voie'+i+'_autre');
+    if (!prodSel || !voieSel) return null;
+
+    const prod     = selectedOrAutre(prodSel, prodOther);
+    const voie     = selectedOrAutre(voieSel, voieOther);
+    const anticipe = !!(document.getElementById('anticipe'+i) && document.getElementById('anticipe'+i).checked);
+    const patch    = isPatchRoute(voieSel.value, voieOther.value);
+
+    // ── Mode PATCH ─────────────────────────────
+    if (patch) {
+      const patchDoseRaw  = parseFr((document.getElementById('patchDose'+i)||{}).value);
+      const patchUnitSel  = document.getElementById('patchUnit'+i);
+      const patchUnit     = patchUnitSel ? patchUnitSel.value : 'µg/h';
+      const patchInterval = parseInt((document.getElementById('patchInterval'+i)||{}).value||'72');
+      const patchCount    = Math.ceil(8*24/patchInterval);
+
+      if (!prod){ alert('Nom du produit manquant (bloc '+i+').'); return '__ERROR__'; }
+
+      // Libellé de dose
+      let doseStr = '';
+      if (Number.isFinite(patchDoseRaw) && patchDoseRaw > 0) {
+        if (patchUnit === 'µg/h') {
+          doseStr = fmtNum(patchDoseRaw, patchDoseRaw % 1 < 1e-9 ? 0 : 1) + ' µg/h';
+        } else if (patchUnit === 'mg') {
+          doseStr = fmtNum(patchDoseRaw, patchDoseRaw % 1 < 1e-9 ? 0 : 1) + ' mg';
+        } else {
+          doseStr = intToFr(Math.round(patchDoseRaw)) + ' (' + Math.round(patchDoseRaw) + ') patch' + (Math.round(patchDoseRaw) > 1 ? 's' : '');
+        }
+      } else {
+        doseStr = patchUnit === 'patch' ? 'un (1) patch' : '—';
+      }
+
+      // Libellé intervalle
+      const intervalJ  = Math.round(patchInterval/24);
+      const intervalW  = intToFr(patchInterval) + ' heures (' + patchInterval + ' h) – ' + intToFr(intervalJ) + ' jour' + (intervalJ>1?'s':'');
+      const countW     = intToFr(patchCount) + ' (' + patchCount + ')';
+
+      const linesH = [
+        '<strong>' + prod.toUpperCase() + '</strong>',
+        '<strong>Voie d\u2019administration</strong> : ' + (voie||''),
+        '<strong>Dose</strong> : ' + doseStr,
+        'Renouvellement du patch : toutes les ' + intervalW,
+        '<strong>Nombre de patchs pour 8 jours : ' + countW + '</strong>'
+      ];
+      const linesT = [
+        prod.toUpperCase(),
+        'Voie d\u2019administration : ' + (voie||''),
+        'Dose : ' + doseStr,
+        'Renouvellement du patch : toutes les ' + intervalW,
+        'Nombre de patchs pour 8 jours : ' + countW
+      ];
+      return { html: linesH.join('<br>'), txt: linesT.join('\n'), anticipe: anticipe };
+    }
+
+    // ── Mode PCA / SC-IV ──────────────────────────
+    const d24   = parseFr((document.getElementById('dose24'+i)||{}).value);
+    const bolus = parseFr((document.getElementById('bolus'+i)||{}).value);
+    const refr  = parseFr((document.getElementById('refract'+i)||{}).value);
+
+    if (!prod && !voie && !d24 && !bolus && !refr) return null;
+    if (!prod){ alert('Nom du produit manquant (bloc '+i+').'); return '__ERROR__'; }
+    if (!Number.isFinite(d24)||d24<0){ alert('Dose de base 24 h invalide (bloc '+i+').'); return '__ERROR__'; }
+    if (!Number.isFinite(bolus)||bolus<0){ alert('Bolus invalide (bloc '+i+').'); return '__ERROR__'; }
+    if (!Number.isFinite(refr)||refr<0){ alert('Période réfractaire invalide (bloc '+i+').'); return '__ERROR__'; }
+
+    const debit_h       = round1(d24/24);
+    const debit_fixed   = toFixedLocal(debit_h, 1);
+    const nb_bolus_max  = refr>0 ? Math.floor((24*60)/refr) : 0;
+    const dose_tot_24h  = d24 + bolus*nb_bolus_max;
+    const dose_tot_8j   = dose_tot_24h*8;
+
+    const dp = n => Math.abs(n)%1<1e-9 ? 0 : 1;
+
+    const d24_w   = decimalToWordsFR(d24) + ' ' + unitWord(d24,'milligramme','milligrammes') + ' (' + fmtFrFixed(d24,'mg',dp(d24)) + ')';
+    const deb_w   = decimalToWordsFromFixed(debit_fixed) + ' ' + unitWord(debit_h,'milligramme','milligrammes') + ' par heure (' + fmtFrFixed(debit_h,'mg/h',1) + ')';
+    const bol_w   = decimalToWordsFR(bolus) + ' ' + unitWord(bolus,'milligramme','milligrammes') + ' (' + fmtFrFixed(bolus,'mg',dp(bolus)) + ')';
+    const ref_w   = intToFr(Math.round(refr)) + ' ' + (Math.round(refr)===1?'minute':'minutes') + ' (' + fmtFrFixed(refr,'min',0) + ')';
+    const nb_w    = intToFr(nb_bolus_max) + ' (' + nb_bolus_max + ')';
+    const bmax    = bolus*nb_bolus_max;
+
+    const linesH = [
+      '<strong>' + prod.toUpperCase() + '</strong>',
+      '<strong>Voie d\u2019administration</strong> : ' + (voie||''),
+      '<strong>Dose de base continue sur 24 h</strong> : ' + d24_w,
+      'Soit un débit de : ' + deb_w,
+      '<strong>Bolus</strong> : ' + bol_w,
+      '<strong>Période réfractaire</strong> : ' + ref_w,
+      'Nombre de bolus maximum par 24 heures : ' + nb_w,
+      'Soit une DOSE TOTALE sur 24 h',
+      '(dose continue + bolus maximum ajoutés/24 h) = ' + fmtFrFixed(d24,'mg',dp(d24)) + ' + ' + fmtFrFixed(bmax,'mg',dp(bmax)) + ' = ' + fmtFrFixed(dose_tot_24h,'mg',dp(dose_tot_24h)),
+      'Soit une DOSE TOTALE pour 8 jours = ' + fmtFrFixed(dose_tot_8j,'mg',dp(dose_tot_8j))
+    ];
+    const linesT = [
+      prod.toUpperCase(),
+      'Voie d\u2019administration : ' + (voie||''),
+      'Dose de base continue sur 24 h : ' + d24_w,
+      'Soit un débit de : ' + deb_w,
+      'Bolus : ' + bol_w,
+      'Période réfractaire : ' + ref_w,
+      'Nombre de bolus maximum par 24 heures : ' + nb_w,
+      'Soit une DOSE TOTALE sur 24 h',
+      '(dose continue + bolus maximum ajoutés/24 h) = ' + fmtFrFixed(d24,'mg',dp(d24)) + ' + ' + fmtFrFixed(bmax,'mg',dp(bmax)) + ' = ' + fmtFrFixed(dose_tot_24h,'mg',dp(dose_tot_24h)),
+      'Soit une DOSE TOTALE pour 8 jours = ' + fmtFrFixed(dose_tot_8j,'mg',dp(dose_tot_8j))
+    ];
+
+    return { html: linesH.join('<br>'), txt: linesT.join('\n'), anticipe: anticipe };
+  }
+
+  function buildAll(){
+    const regulars=[], anticipes=[];
+    let anyError=false;
+    for(let i=1;i<=blockCount;i++){
+      const b=buildSingle(i);
+      if(b==='__ERROR__'){anyError=true;break;}
+      if(b){ if(b.anticipe) anticipes.push(b); else regulars.push(b); }
+    }
+    if(anyError) return null;
+
+    const hp=[], tp=[];
+    if(regulars.length>0){
+      hp.push('<strong>PRESCRIPTION</strong><br>');
+      tp.push('PRESCRIPTION\n');
+      regulars.forEach(function(b,idx){
+        if(idx>0){hp.push('———');tp.push('———');}
+        hp.push(b.html); tp.push(b.txt);
+      });
+    }
+    if(anticipes.length>0){
+      if(regulars.length>0){hp.push('<br><br>');tp.push('\n\n');}
+      hp.push('<strong>PRESCRIPTION ANTICIPÉE</strong><br>');
+      tp.push('PRESCRIPTION ANTICIPÉE\n');
+      anticipes.forEach(function(b,idx){
+        if(idx>0){hp.push('———');tp.push('———');}
+        hp.push(b.html); tp.push(b.txt);
+      });
+    }
+    if(regulars.length===0&&anticipes.length===0){
+      hp.push('<strong>PRESCRIPTION</strong><br>');
+      tp.push('PRESCRIPTION\n');
+    }
+    return { html:hp.join('<br>'), txt:tp.join('\n') };
+  }
+
+  // ── Boutons principaux ─────────────────────────
+  document.getElementById('add').addEventListener('click', addBlock);
+
+  document.getElementById('gen').addEventListener('click', function(){
+    const built=buildAll();
+    if(!built) return;
+    document.getElementById('preview').innerHTML = built.html;
+    document.getElementById('plain').value = built.txt;
+    document.getElementById('richSource').innerHTML = built.html;
+  });
+
+  document.getElementById('copy').addEventListener('click', function(){
+    const t=document.getElementById('plain');
+    if(!t.value.trim()){alert('Rien à copier : génère le texte d\u2019abord.');return;}
+    t.focus();t.select();
+    const ok=document.execCommand('copy');
+    if(!ok&&navigator.clipboard) navigator.clipboard.writeText(t.value);
+    const self=this;
+    self.textContent='Copié (texte) ✅';
+    setTimeout(function(){self.textContent='Copier (texte brut)';},1200);
+  });
+
+  document.getElementById('copyRich').addEventListener('click', function(){
+    const src=document.getElementById('richSource');
+    if(!src.innerHTML.trim()){alert('Rien à copier : génère le texte d\u2019abord.');return;}
+    const range=document.createRange();
+    range.selectNodeContents(src);
+    const sel=window.getSelection();
+    sel.removeAllRanges();sel.addRange(range);
+    const ok=document.execCommand('copy');
+    sel.removeAllRanges();
+    const self=this;
+    self.textContent=ok?'Copié (mise en forme) ✅':'Copie riche (réessayer)';
+    setTimeout(function(){self.textContent='Copier avec mise en forme';},1400);
+  });
+
+  document.getElementById('reset').addEventListener('click', function(){
+    blocksContainer.innerHTML='';
+    blockCount=0;
+    addBlock();
+    document.getElementById('preview').textContent='';
+    document.getElementById('plain').value='';
+    document.getElementById('richSource').innerHTML='';
+    // Reset convertisseur
+    document.getElementById('convResult').style.display='none';
+    document.getElementById('injectRow').style.display='none';
+    document.getElementById('convSrcDose').value='';
+    document.getElementById('convCustomFrac').value='';
+    document.getElementById('convCustomRefract').value='';
+    document.getElementById('convCustomFracWrap').style.display='none';
+    document.getElementById('convCustomRefractWrap').style.display='none';
+    document.getElementById('convInterdoseFrac').selectedIndex=0;
+    document.getElementById('convRefractSugg').value='30';
+    document.getElementById('convSrcMol').selectedIndex=0;
+    document.getElementById('convTgtMol').selectedIndex=0;
+    updateSrcMolUI();
+    updateTgtMolUI();
+    lastConversion=null;
+  });
+});
+</script>
+</body>
+</html>
