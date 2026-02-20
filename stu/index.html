@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prescription – Antalgiques STU v2.0</title>
+<style>
+  :root {
+    --gap: 12px;
+    --border: #e5e7eb;
+    --radius: 10px;
+    --padding: 10px 12px;
+    --blue: #1e40af;
+    --blue-light: #dbeafe;
+    --blue-mid: #93c5fd;
+    --blue-focus: #3b82f6;
+  }
+  * { box-sizing: border-box; }
+  html, body, button, input, select, textarea {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 12pt;
+    color: #111827;
+  }
+  body { margin: 24px; background: #fafafa; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+
+  /* ── En-tête page (identique PCA) ── */
+  .page-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    border-bottom: 2px solid #111827; padding-bottom: 8px; margin-bottom: 18px;
+  }
+  .page-header h1 {
+    font-size: 14pt; font-weight: 700; letter-spacing: .04em;
+    margin: 0; text-transform: uppercase;
+  }
+  .version-badge {
+    font-size: 9pt; font-weight: 700; color: #fff;
+    background: #374151; border-radius: 20px;
+    padding: 2px 10px; letter-spacing: .05em;
+  }
+
+  .muted { color: #6b7280; font-style: italic; font-size: 11pt; }
+  .block {
+    border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px; margin-bottom: 14px; background: #fff;
+    box-shadow: 0 1px 3px #0001;
+  }
+  .grid  { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); }
+  label  { display: block; font-weight: 700; margin: 10px 0 6px; }
+  input, select {
+    width: 100%; padding: var(--padding);
+    border: 1px solid #d1d5db; border-radius: 10px; background: #fff;
+  }
+  input:focus, select:focus {
+    outline: 2px solid var(--blue-focus); outline-offset: 1px;
+  }
+  input[type="number"] { width: 120px; }
+  .buttons { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 0; }
+  button {
+    padding: var(--padding); border: 1px solid #11182720; border-radius: 10px;
+    font-weight: 700; cursor: pointer; background: #111827; color: #fff;
+    transition: opacity .15s;
+  }
+  button:hover { opacity: .85; }
+  button.secondary { background: #fff; color: #111827; border-color: #d1d5db; }
+  button.linklike  { background: transparent; color: #6b7280; border: none; padding: 0; text-decoration: underline; cursor: pointer; font-weight: 400; }
+  .headerRow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .preview {
+    margin-top: 16px; padding: 16px; border: 1px solid var(--border);
+    border-radius: 12px; background: #fff; line-height: 1.4;
+    box-shadow: 0 1px 3px #0001;
+  }
+  .preview .title { font-weight: 700; font-size: 12pt; margin-bottom: 8px; }
+  .bloc { margin: 0 0 10px 0; }
+  .spe  { font-weight: 700; font-size: 14pt; text-transform: uppercase; }
+  .hide { display: none !important; }
+  .qpick { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+  .qpick button { background: #fff; color: #111827; border: 1px solid #d1d5db; padding: 8px 12px; font-size: 11pt; }
+  .small { font-size: 11pt; color: #374151; margin-top: 4px; }
+  em { font-style: italic; }
+  #richSource, #plain { position: absolute; left: -9999px; opacity: 0; pointer-events: none; }
+
+  /* ── Panneau équivalences (style bandeau PCA) ── */
+  .panel {
+    margin-top: 16px; margin-bottom: 4px;
+    border: 2px solid var(--blue-focus);
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 2px 8px #3b82f620;
+  }
+  .panel-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    padding: 10px 18px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .panel-header h2 {
+    margin: 0; color: #fff; font-size: 12pt; letter-spacing: .03em; font-weight: 700;
+  }
+  .panel-header .panel-sfap {
+    font-size: 9pt; background: #ffffff25; color: #e0f2fe;
+    border-radius: 20px; padding: 2px 9px; font-weight: 700; letter-spacing: .04em;
+  }
+  .panel-body {
+    padding: 12px 18px; background: #f0f5ff;
+    line-height: 1.65; font-size: 11pt; color: #1e3a8a;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="page-header">
+    <h1>Prescription STU – Antalgiques (niveaux I, II, III)</h1>
+    <span class="version-badge">v2.0 – fév. 2026</span>
+  </div>
+  <div id="blocks"></div>
+  <div class="buttons">
+    <button id="add" class="secondary">Ajouter une ligne</button>
+    <button id="gen">Générer l'ordonnance</button>
+    <button id="copy" class="secondary">Copier (texte)</button>
+    <button id="copyRich" class="secondary">Copier avec mise en forme</button>
+    <button id="reset" class="secondary">Réinitialiser</button>
+  </div>
+  <div id="preview" class="preview" role="region" aria-live="polite"></div>
+  <textarea id="plain" readonly aria-hidden="true"></textarea>
+  <div id="richSource" contenteditable="true" aria-hidden="true"></div>
+  <div id="equivPanel" class="panel hide">
+    <div class="panel-header">
+      <h2>⚖ Équivalences opioïdes</h2>
+      <span class="panel-sfap">SFAP 2010</span>
+    </div>
+    <div class="panel-body" id="equivContent"></div>
+  </div>
+  <p class="muted">Niveaux I &amp; II : rédaction standard (sans écriture en toutes lettres). Niveau III : rédaction lettrée + mention <em>« en cas de douleur… »</em> à la ligne pour les formes rapides. Le panneau d'équivalences n'affiche que les lignes de fond de niveau III.</p>
+
+  <div style="margin-top:24px; padding:10px 14px; border-top:1px solid #e5e7eb; font-size:9.5pt; color:#9ca3af; display:flex; justify-content:space-between; align-items:center;">
+    <span>Outil de prescription STU – Antalgiques (niveaux I, II, III)</span>
+    <span>v2.0 · Ratios SFAP · Usage interne · Vérifier selon contexte clinique</span>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ========== CONFIGURATION ==========
+const CONFIG = {MAX_BLOCKS: 8};
+
+const MEDS = {
+  L1: [
+    {id:'p500',label:'Paracétamol 500 mg — comprimé',name:'Paracétamol',dose:'500 mg',pres:'comprimé'},
+    {id:'p1000',label:'Paracétamol 1000 mg — comprimé',name:'Paracétamol',dose:'1000 mg',pres:'comprimé'},
+    {id:'ib200',label:'Ibuprofène 200 mg — comprimé',name:'Ibuprofène',dose:'200 mg',pres:'comprimé'},
+    {id:'ib400',label:'Ibuprofène 400 mg — comprimé',name:'Ibuprofène',dose:'400 mg',pres:'comprimé'},
+    {id:'k50',label:'Kétoprofène 50 mg — comprimé',name:'Kétoprofène',dose:'50 mg',pres:'comprimé'},
+    {id:'k100',label:'Kétoprofène 100 mg — comprimé',name:'Kétoprofène',dose:'100 mg',pres:'comprimé'},
+    {id:'n250',label:'Naproxène 250 mg — comprimé',name:'Naproxène',dose:'250 mg',pres:'comprimé'},
+    {id:'n500',label:'Naproxène 500 mg — comprimé',name:'Naproxène',dose:'500 mg',pres:'comprimé'},
+    {id:'a500',label:'Aspirine 500 mg — comprimé',name:'Aspirine',dose:'500 mg',pres:'comprimé'},
+    {id:'m500',label:'Métamizole 500 mg — comprimé',name:'Métamizole',dose:'500 mg',pres:'comprimé'}
+  ],
+  L2: [
+    {id:'t50',label:'Tramadol 50 mg — gélule',name:'Tramadol',dose:'50 mg',pres:'gélule'},
+    {id:'t100LP',label:'Tramadol LP 100 mg — gélule',name:'Tramadol LP',dose:'100 mg',pres:'gélule'},
+    {id:'t200LP',label:'Tramadol LP 200 mg — gélule',name:'Tramadol LP',dose:'200 mg',pres:'gélule'},
+    {id:'c30',label:'Codéine 30 mg — comprimé',name:'Codéine',dose:'30 mg',pres:'comprimé'},
+    {id:'dhc60LP',label:'Dihydrocodéine LP 60 mg — comprimé',name:'Dihydrocodéine LP',dose:'60 mg',pres:'comprimé'},
+    {id:'dhc90LP',label:'Dihydrocodéine LP 90 mg — comprimé',name:'Dihydrocodéine LP',dose:'90 mg',pres:'comprimé'},
+    {id:'til50',label:'Tilidine/Naloxone 50/4 mg — comprimé',name:'Tilidine/Naloxone',dose:'50/4 mg',pres:'comprimé'}
+  ],
+  L3_FOND: [
+    {id:'mLP10',label:'Morphine LP 10 mg — comprimés',mol:'Morphine',lib:'LP',dose:10,unit:'mg',pres:'comprimés',defDays:28,speName:'Morphine LP 10 mg, comprimés.'},
+    {id:'mLP30',label:'Morphine LP 30 mg — comprimés',mol:'Morphine',lib:'LP',dose:30,unit:'mg',pres:'comprimés',defDays:28,speName:'Morphine LP 30 mg, comprimés.'},
+    {id:'mLP60',label:'Morphine LP 60 mg — comprimés',mol:'Morphine',lib:'LP',dose:60,unit:'mg',pres:'comprimés',defDays:28,speName:'Morphine LP 60 mg, comprimés.'},
+    {id:'mLP100',label:'Morphine LP 100 mg — comprimés',mol:'Morphine',lib:'LP',dose:100,unit:'mg',pres:'comprimés',defDays:28,speName:'Morphine LP 100 mg, comprimés.'},
+    {id:'mLP200',label:'Morphine LP 200 mg — comprimés',mol:'Morphine',lib:'LP',dose:200,unit:'mg',pres:'comprimés',defDays:28,speName:'Morphine LP 200 mg, comprimés.'},
+    {id:'oLP10',label:'Oxycodone LP 10 mg — comprimés',mol:'Oxycodone',lib:'LP',dose:10,unit:'mg',pres:'comprimés',defDays:28,speName:'Oxycodone LP 10 mg, comprimés.'},
+    {id:'oLP20',label:'Oxycodone LP 20 mg — comprimés',mol:'Oxycodone',lib:'LP',dose:20,unit:'mg',pres:'comprimés',defDays:28,speName:'Oxycodone LP 20 mg, comprimés.'},
+    {id:'oLP40',label:'Oxycodone LP 40 mg — comprimés',mol:'Oxycodone',lib:'LP',dose:40,unit:'mg',pres:'comprimés',defDays:28,speName:'Oxycodone LP 40 mg, comprimés.'},
+    {id:'oLP80',label:'Oxycodone LP 80 mg — comprimés',mol:'Oxycodone',lib:'LP',dose:80,unit:'mg',pres:'comprimés',defDays:28,speName:'Oxycodone LP 80 mg, comprimés.'},
+    {id:'f25',label:'Fentanyl patch 25 µg/h — patch',mol:'Fentanyl',lib:'Patch',dose:25,unit:'µg/h',pres:'patch',defDays:14,speName:'Fentanyl 25 µg/h, patch.'},
+    {id:'f50',label:'Fentanyl patch 50 µg/h — patch',mol:'Fentanyl',lib:'Patch',dose:50,unit:'µg/h',pres:'patch',defDays:14,speName:'Fentanyl 50 µg/h, patch.'},
+    {id:'f75',label:'Fentanyl patch 75 µg/h — patch',mol:'Fentanyl',lib:'Patch',dose:75,unit:'µg/h',pres:'patch',defDays:14,speName:'Fentanyl 75 µg/h, patch.'},
+    {id:'f100',label:'Fentanyl patch 100 µg/h — patch',mol:'Fentanyl',lib:'Patch',dose:100,unit:'µg/h',pres:'patch',defDays:14,speName:'Fentanyl 100 µg/h, patch.'}
+  ],
+  L3_INTER: [
+    {id:'mIR5',label:'Morphine IR 5 mg — comprimés',mol:'Morphine',lib:'IR',dose:5,unit:'mg',pres:'comprimés',defDays:10,speName:'Morphine IR 5 mg, comprimés.'},
+    {id:'mIR10',label:'Morphine IR 10 mg — comprimés',mol:'Morphine',lib:'IR',dose:10,unit:'mg',pres:'comprimés',defDays:10,speName:'Morphine IR 10 mg, comprimés.'},
+    {id:'mIR20',label:'Morphine IR 20 mg — comprimés',mol:'Morphine',lib:'IR',dose:20,unit:'mg',pres:'comprimés',defDays:10,speName:'Morphine IR 20 mg, comprimés.'},
+    {id:'mIR30',label:'Morphine IR 30 mg — comprimés',mol:'Morphine',lib:'IR',dose:30,unit:'mg',pres:'comprimés',defDays:10,speName:'Morphine IR 30 mg, comprimés.'},
+    {id:'mSOL',label:'Morphine solution 10 mg/ml — solution buvable',mol:'Morphine',lib:'Solution',dose:10,unit:'mg/ml',pres:'solution buvable',defDays:7,speName:'Morphine 10 mg/ml, solution buvable.'},
+    {id:'oIR5',label:'Oxycodone IR 5 mg — gélules',mol:'Oxycodone',lib:'IR',dose:5,unit:'mg',pres:'gélules',defDays:10,speName:'Oxycodone IR 5 mg, gélules.'},
+    {id:'oIR10',label:'Oxycodone IR 10 mg — gélules',mol:'Oxycodone',lib:'IR',dose:10,unit:'mg',pres:'gélules',defDays:10,speName:'Oxycodone IR 10 mg, gélules.'},
+    {id:'oIR20',label:'Oxycodone IR 20 mg — gélules',mol:'Oxycodone',lib:'IR',dose:20,unit:'mg',pres:'gélules',defDays:10,speName:'Oxycodone IR 20 mg, gélules.'},
+    {id:'oORO5',label:'Oxycodone IR 5 mg — comprimés orodispersibles',mol:'Oxycodone',lib:'IR',dose:5,unit:'mg',pres:'comprimés orodispersibles',defDays:10,speName:'Oxycodone IR 5 mg, comprimés orodispersibles.'},
+    {id:'oORO10',label:'Oxycodone IR 10 mg — comprimés orodispersibles',mol:'Oxycodone',lib:'IR',dose:10,unit:'mg',pres:'comprimés orodispersibles',defDays:10,speName:'Oxycodone IR 10 mg, comprimés orodispersibles.'},
+    {id:'oORO20',label:'Oxycodone IR 20 mg — comprimés orodispersibles',mol:'Oxycodone',lib:'IR',dose:20,unit:'mg',pres:'comprimés orodispersibles',defDays:10,speName:'Oxycodone IR 20 mg, comprimés orodispersibles.'}
+  ]
+};
+
+// ========== UTILITIES ==========
+const NumConverter = {
+  u: ['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf'],
+  teens: {10:'dix',11:'onze',12:'douze',13:'treize',14:'quatorze',15:'quinze',16:'seize',17:'dix-sept',18:'dix-huit',19:'dix-neuf'},
+  tens: ['','dix','vingt','trente','quarante','cinquante','soixante','soixante-dix','quatre-vingt','quatre-vingt-dix'],
+  
+  to99(n) {
+    if(n<10) return this.u[n];
+    if(n<20) return this.teens[n];
+    const t=Math.floor(n/10), o=n%10;
+    let base=this.tens[t];
+    if(t===7) return o===0 ? 'soixante-dix' : 'soixante-'+this.teens[10+o];
+    if(t===9) return o===0 ? 'quatre-vingt-dix' : 'quatre-vingt-'+this.teens[10+o];
+    if(t===8 && o===0) return 'quatre-vingts';
+    if(o===0) return base;
+    if(o===1 && t>=2 && t<=6) return base+' et un';
+    return base+'-'+this.u[o];
+  },
+  
+  to999(n) {
+    if(n<100) return this.to99(n);
+    const h=Math.floor(n/100), r=n%100;
+    if(h===1) return r===0 ? 'cent' : 'cent '+this.to99(r);
+    return this.to99(h)+' cent'+(r===0?'s':'')+' '+this.to99(r);
+  },
+  
+  convert(n) {
+    n=Math.round(n);
+    return n<0 ? 'zéro' : n>999 ? String(n) : this.to999(n);
+  }
+};
+
+const Fmt = {
+  unitWord(pres) {
+    const m={'gélules':'gélule','gélule':'gélule','comprimés':'comprimé','comprimé':'comprimé','comprimés orodispersibles':'comprimé orodispersible','patch':'dispositif','solution buvable':'millilitre'};
+    return m[pres]||'unité';
+  },
+  
+  doseWords(dose,unit) {
+    const w=NumConverter.convert(dose);
+    if(unit==='µg/h') return `${w} microgrammes par heure (${dose} µg/h)`;
+    if(unit==='mg/ml') return `${w} milligrammes par millilitre (${dose} mg/ml)`;
+    return `${w} milligrammes (${dose} mg)`;
+  },
+  
+  lineL1L2(med,other,days,ind,poso) {
+    const spe=(med?`${med.name} ${med.dose}, ${med.pres}.`:other).toUpperCase();
+    const p=(poso?.trim()||'1 unité matin et soir');
+    return `<div class="bloc"><div class="spe">${spe}</div><div>Posologie : ${p}.</div><div>Durée de traitement : ${days} jours.</div>${ind?`<div>Indication : ${ind}.</div>`:''}</div>`;
+  },
+  
+  lineL3(cat,med,days,ind) {
+    const dt=`${NumConverter.convert(days)} (${days}) jours`;
+    const uw=this.unitWord(med.pres);
+    const dw=this.doseWords(med.dose,med.unit);
+    let pos='';
+    
+    if(med.lib==='Patch') {
+      const n=Math.ceil(days/3);
+      pos=`<div>Posologie : Un (1) ${uw} à ${dw} toutes les soixante-douze heures (72 h).</div><div>Durée de traitement : ${dt}.</div><div>Quantité : soit ${NumConverter.convert(n)} (${n}) dispositifs.</div>`;
+    } else if(med.lib==='LP') {
+      pos=`<div>Posologie : Un (1) ${uw} à ${dw} le matin et un (1) ${uw} à ${dw} le soir.</div><div>Durée de traitement : ${dt}.</div>`;
+    } else if(med.lib==='IR') {
+      pos=`<div>Posologie : Un (1) ${uw} à ${dw} toutes les quatre à six heures (4–6 h).</div><div><em>En cas de douleur supérieure ou égale à trois sur dix (≥ 3/10).</em></div><div>Durée de traitement : ${dt}.</div>`;
+    } else if(med.lib==='Solution') {
+      pos=`<div>Posologie : Un (1) millilitre à ${dw} toutes les quatre heures (4 h).</div><div><em>En cas de douleur supérieure ou égale à trois sur dix (≥ 3/10).</em></div><div>Durée de traitement : ${dt}.</div>`;
+    }
+    
+    return `<div class="bloc"><div class="spe">${med.speName?.toUpperCase()||''}</div>${pos}${ind&&cat==='fond'&&med.lib!=='IR'?`<div>Indication : ${ind}.</div>`:''}</div>`;
+  }
+};
+
+const Equiv = {
+  getMO(med) {
+    if(!med) return 0;
+    if(med.mol==='Morphine'&&med.lib==='LP') return 2*med.dose;
+    if(med.mol==='Oxycodone'&&med.lib==='LP') return 4*med.dose;
+    if(med.mol==='Fentanyl'&&med.lib==='Patch') return 2.4*med.dose;
+    return 0;
+  },
+  
+  calc(MO) {
+    const r5=v=>Math.round(v/5)*5;
+    const rf=v=>[25,50,75,100].reduce((a,b)=>Math.abs(b-v)<Math.abs(a-v)?b:a);
+    return {MO:r5(MO),MSC:r5(MO/2),MIV:r5(MO/3),OxyPO:r5(MO/2),FTD:rf(MO/2.4)};
+  }
+};
+
+// ========== BLOCK MANAGER ==========
+const App = {
+  container: null,
+  count: 0,
+  
+  init() {
+    this.container = document.getElementById('blocks');
+    this.container.addEventListener('click', e => this.onClick(e));
+    this.container.addEventListener('change', e => this.onChange(e));
+    
+    document.getElementById('add').onclick = () => this.addBlock();
+    document.getElementById('gen').onclick = () => this.generate();
+    document.getElementById('copy').onclick = function() { App.copyText(this); };
+    document.getElementById('copyRich').onclick = function() { App.copyRich(this); };
+    document.getElementById('reset').onclick = () => this.reset();
+    
+    this.addBlock();
+  },
+  
+  onClick(e) {
+    const t = e.target;
+    if(t.matches('.removeBtn')) {
+      const b = t.closest('.block');
+      b && this.container.removeChild(b);
+    }
+    if(t.matches('.qpick button')) {
+      const b = t.closest('.block');
+      const d = b?.querySelector('[data-f="dur"]');
+      if(d) d.value = t.dataset.d;
+    }
+  },
+  
+  onChange(e) {
+    const t = e.target;
+    const b = t.closest('.block');
+    if(!b) return;
+    
+    if(t.matches('[data-f="lvl"]') || t.matches('[data-f="cat"]')) {
+      this.updateUI(b);
+    }
+    if(t.matches('[data-f="spec"]')) {
+      this.updateSpec(b);
+    }
+  },
+  
+  updateUI(b) {
+    const lvl = b.querySelector('[data-f="lvl"]').value;
+    const cw = b.querySelector('[data-w="cat"]');
+    const ow = b.querySelector('[data-w="other"]');
+    const pw = b.querySelector('[data-w="poso"]');
+    const spec = b.querySelector('[data-f="spec"]');
+    const dur = b.querySelector('[data-f="dur"]');
+    const help = b.querySelector('[data-h="dur"]');
+    
+    if(lvl==='III') {
+      cw?.classList.remove('hide');
+      pw?.classList.add('hide');
+      const cat = b.querySelector('[data-f="cat"]').value;
+      const list = cat==='fond' ? MEDS.L3_FOND : MEDS.L3_INTER;
+      this.fillSelect(spec, list);
+      dur.value = list[0].defDays;
+      this.updateHelp(help, cat, list[0]);
+    } else {
+      cw?.classList.add('hide');
+      pw?.classList.remove('hide');
+      const list = lvl==='I' ? MEDS.L1 : MEDS.L2;
+      this.fillSelect(spec, list);
+      dur.value = 7;
+      help.textContent = 'Par défaut : 7 jours (modifiable).';
+    }
+    ow?.classList.add('hide');
+  },
+  
+  updateSpec(b) {
+    const spec = b.querySelector('[data-f="spec"]');
+    const ow = b.querySelector('[data-w="other"]');
+    const lvl = b.querySelector('[data-f="lvl"]').value;
+    const dur = b.querySelector('[data-f="dur"]');
+    const help = b.querySelector('[data-h="dur"]');
+    
+    if(spec.value==='other') {
+      ow?.classList.remove('hide');
+    } else {
+      ow?.classList.add('hide');
+      if(lvl==='III') {
+        const cat = b.querySelector('[data-f="cat"]').value;
+        const list = cat==='fond' ? MEDS.L3_FOND : MEDS.L3_INTER;
+        const med = list.find(m => m.id===spec.value);
+        if(med) {
+          dur.value = med.defDays;
+          this.updateHelp(help, cat, med);
+        }
+      }
+    }
+  },
+  
+  updateHelp(el, cat, med) {
+    if(!el) return;
+    if(cat==='fond'&&med.lib==='Patch') el.textContent='Par défaut patch : 14 jours.';
+    else if(cat==='fond') el.textContent='Par défaut fond : 28 jours.';
+    else if(med.lib==='Solution') el.textContent='Par défaut solution : 7 jours.';
+    else el.textContent='Par défaut interdose : 10 jours.';
+  },
+  
+  fillSelect(sel, list) {
+    sel.innerHTML = '';
+    list.forEach(m => {
+      const o = document.createElement('option');
+      o.value = m.id;
+      o.textContent = m.label;
+      sel.appendChild(o);
+    });
+    const other = document.createElement('option');
+    other.value = 'other';
+    other.textContent = 'Autre spécialité…';
+    sel.appendChild(other);
+    sel.value = list[0].id;
+  },
+  
+  addBlock() {
+    if(this.count >= CONFIG.MAX_BLOCKS) {
+      alert(`Maximum ${CONFIG.MAX_BLOCKS} lignes.`);
+      return;
+    }
+    
+    const i = ++this.count;
+    const div = document.createElement('div');
+    div.className = 'block';
+    div.innerHTML = `
+      <div class="headerRow">
+        <strong>Ligne ${i}</strong>
+        <button type="button" class="linklike removeBtn" ${i===1?'style="display:none"':''}>Supprimer</button>
+      </div>
+      <div class="grid3">
+        <div>
+          <label>Niveau OMS</label>
+          <select data-f="lvl">
+            <option value="I">Niveau I — antalgiques non opioïdes</option>
+            <option value="II">Niveau II — opioïdes faibles</option>
+            <option value="III">Niveau III — opioïdes forts</option>
+          </select>
+        </div>
+        <div data-w="cat" class="hide">
+          <label>Catégorie (Niv. III)</label>
+          <select data-f="cat">
+            <option value="fond">Médication de fond</option>
+            <option value="interdose">Interdose (forme rapide)</option>
+          </select>
+        </div>
+        <div>
+          <label>Spécialité</label>
+          <select data-f="spec"></select>
+        </div>
+      </div>
+      <div data-w="other" class="hide">
+        <label>Autre spécialité (nom + dosage + forme)</label>
+        <input data-f="other" placeholder="ex. Paracétamol 750 mg, comprimé"/>
+      </div>
+      <div class="grid">
+        <div>
+          <label>Durée (jours)</label>
+          <div class="qpick">
+            <button type="button" data-d="7">7</button>
+            <button type="button" data-d="14">14</button>
+            <button type="button" data-d="21">21</button>
+            <button type="button" data-d="28">28</button>
+          </div>
+          <input data-f="dur" type="number" min="1" value="28"/>
+          <div class="small" data-h="dur"></div>
+        </div>
+        <div>
+          <label>Indication (optionnelle)</label>
+          <input data-f="ind" placeholder="ex. douleur nociceptive"/>
+          <div class="small">Non insérée pour les formes rapides de niveau III.</div>
+        </div>
+      </div>
+      <div data-w="poso" class="hide">
+        <label>Posologie (texte libre — utilisé pour Niveaux I & II)</label>
+        <input data-f="poso" placeholder="ex. 1 comprimé 3 fois par jour si douleur"/>
+      </div>
+    `;
+    this.container.appendChild(div);
+    this.updateUI(div);
+  },
+  
+  generate() {
+    const blocks = [...this.container.querySelectorAll('.block')];
+    const frags = ['<div class="title">Prescription – Antalgiques (niveaux I, II, III)</div>'];
+    
+    blocks.forEach(b => {
+      const lvl = b.querySelector('[data-f="lvl"]').value;
+      const spec = b.querySelector('[data-f="spec"]').value;
+      const days = parseInt(b.querySelector('[data-f="dur"]').value||'0',10);
+      const ind = b.querySelector('[data-f="ind"]').value.trim();
+      const other = b.querySelector('[data-f="other"]')?.value.trim()||'';
+      const poso = b.querySelector('[data-f="poso"]')?.value.trim()||'';
+      
+      if(lvl==='I'||lvl==='II') {
+        const list = lvl==='I' ? MEDS.L1 : MEDS.L2;
+        const med = spec==='other' ? null : list.find(m=>m.id===spec);
+        frags.push(Fmt.lineL1L2(med,other,days,ind,poso));
+      } else if(lvl==='III') {
+        const cat = b.querySelector('[data-f="cat"]').value;
+        const list = cat==='fond' ? MEDS.L3_FOND : MEDS.L3_INTER;
+        if(spec==='other') {
+          const spe = other.toUpperCase();
+          const p = poso || 'Posologie selon protocole';
+          frags.push(`<div class="bloc"><div class="spe">${spe}</div><div>Posologie : ${p}.</div><div>Durée de traitement : ${days} jours.</div>${ind?`<div>Indication : ${ind}.</div>`:''}</div>`);
+        } else {
+          const med = list.find(m=>m.id===spec);
+          if(med) frags.push(Fmt.lineL3(cat,med,days,ind));
+        }
+      }
+    });
+    
+    const html = frags.join('');
+    document.getElementById('preview').innerHTML = html;
+    document.getElementById('richSource').innerHTML = html;
+    document.getElementById('plain').value = this.stripHtml(html);
+    
+    this.generateEquiv(blocks);
+  },
+  
+  generateEquiv(blocks) {
+    const lines = [];
+    blocks.forEach(b => {
+      const lvl = b.querySelector('[data-f="lvl"]').value;
+      if(lvl!=='III') return;
+      const cat = b.querySelector('[data-f="cat"]')?.value;
+      if(cat!=='fond') return;
+      const spec = b.querySelector('[data-f="spec"]').value;
+      if(spec==='other') return;
+      const med = MEDS.L3_FOND.find(m=>m.id===spec);
+      if(!med) return;
+      const MO = Equiv.getMO(med);
+      if(MO<=0) return;
+      const eq = Equiv.calc(MO);
+      lines.push(`${med.speName.toUpperCase()} — Équiv. morphine orale ≈ ${eq.MO} mg/j ; Morphine SC ≈ ${eq.MSC} mg/j ; Morphine IV ≈ ${eq.MIV} mg/j ; Oxycodone orale ≈ ${eq.OxyPO} mg/j ; Fentanyl patch ≈ ${eq.FTD} µg/h.`);
+    });
+    
+    const panel = document.getElementById('equivPanel');
+    const content = document.getElementById('equivContent');
+    if(lines.length) {
+      panel.classList.remove('hide');
+      content.innerHTML = lines.join('<br><br>');
+    } else {
+      panel.classList.add('hide');
+      content.innerHTML = '';
+    }
+  },
+  
+  stripHtml(html) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return (tmp.textContent||tmp.innerText||'').replace(/\n{3,}/g,'\n\n');
+  },
+  
+  copyText(btn) {
+    const t = document.getElementById('plain');
+    if(!t.value.trim()) {
+      alert('Rien à copier : génère le texte d\'abord.');
+      return;
+    }
+    t.focus();
+    t.select();
+    try {
+      document.execCommand('copy');
+    } catch(e) {
+      if(navigator.clipboard) navigator.clipboard.writeText(t.value);
+    }
+    btn.textContent = 'Copié (texte) ✅';
+    setTimeout(() => btn.textContent='Copier (texte)', 1200);
+  },
+  
+  copyRich(btn) {
+    const src = document.getElementById('richSource');
+    if(!src.innerHTML.trim()) {
+      alert('Rien à copier : génère le texte d\'abord.');
+      return;
+    }
+    const range = document.createRange();
+    range.selectNodeContents(src);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+    btn.textContent = 'Copié (mise en forme) ✅';
+    setTimeout(() => btn.textContent='Copier avec mise en forme', 1400);
+  },
+  
+  reset() {
+    this.container.innerHTML = '';
+    this.count = 0;
+    this.addBlock();
+    document.getElementById('preview').innerHTML = '';
+    document.getElementById('plain').value = '';
+    document.getElementById('richSource').innerHTML = '';
+    document.getElementById('equivPanel').classList.add('hide');
+    document.getElementById('equivContent').innerHTML = '';
+  }
+};
+
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>
