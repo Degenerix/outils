@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Degenerix — Portail médical</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --border:    #21262d;
+      --border-hi: #30363d;
+      --text:      #e6edf3;
+      --muted:     #7d8590;
+      --accent:    #c9a96e;
+      --accent2:   #4d9de0;
+      --danger:    #e05252;
+      --green:     #3fb950;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, Arial, sans-serif;
+      font-size: 16px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Grain overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 9999; opacity: .5;
+    }
+
+    /* ── Ambient glow ── */
+    .glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .glow-1 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, #c9a96e18 0%, transparent 70%);
+      top: -200px; right: -200px;
+    }
+    .glow-2 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #4d9de012 0%, transparent 70%);
+      bottom: -100px; left: -150px;
+    }
+
+    /* ── Layout ── */
+    .wrap {
+      position: relative; z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 60px 32px 80px;
+    }
+
+    /* ── Header ── */
+    header {
+      margin-bottom: 72px;
+      animation: fadeUp .7s ease both;
+    }
+    .logo-row {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 10px;
+    }
+    .logo {
+      font-size: 38px;
+      font-weight: 300;
+      letter-spacing: .08em;
+      color: var(--text);
+    }
+    .logo span {
+      color: var(--accent);
+    }
+    .tagline {
+      font-size: 13px;
+      font-family: 'DM Mono', monospace;
+      font-weight: 300;
+      color: var(--muted);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .header-line {
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--border) 60%, transparent 100%);
+      margin-top: 20px;
+    }
+
+    /* ── Section title ── */
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Cards grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px 24px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+      animation: fadeUp .6s ease both;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity .25s;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px #0008;
+    }
+
+    /* Couleur d'accent par type */
+    .card.active { border-color: var(--border-hi); }
+    .card.active::before { background: linear-gradient(135deg, var(--accent)08 0%, transparent 60%); }
+    .card.active:hover { border-color: var(--accent); box-shadow: 0 12px 40px #c9a96e18; }
+    .card.active:hover::before { opacity: 1; }
+
+    .card.utility { border-color: var(--border-hi); }
+    .card.utility::before { background: linear-gradient(135deg, var(--accent2)08 0%, transparent 60%); }
+    .card.utility:hover { border-color: var(--accent2); box-shadow: 0 12px 40px #4d9de018; }
+    .card.utility:hover::before { opacity: 1; }
+
+    .card.soon {
+      opacity: .5;
+      pointer-events: none;
+      cursor: default;
+    }
+
+    /* ── Card internals ── */
+    .card-icon {
+      font-size: 17px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .card-badge {
+      position: absolute;
+      top: 16px; right: 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-weight: 400;
+    }
+    .badge-live { background: #3fb95020; color: var(--green); border: 1px solid #3fb95040; }
+    .badge-soon { background: #7d859018; color: var(--muted); border: 1px solid #7d859030; }
+    .badge-v2   { background: #c9a96e18; color: var(--accent); border: 1px solid #c9a96e30; }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: .02em;
+      line-height: 1.2;
+    }
+    .card-sub {
+      font-size: 13px;
+      font-style: italic;
+      color: var(--muted);
+      line-height: 1.5;
+      font-weight: 300;
+    }
+    .card-url {
+      margin-top: auto;
+      padding-top: 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: .05em;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Numéro décoratif */
+    .card-num {
+      position: absolute;
+      bottom: 18px; right: 20px;
+      font-family: 'Inter', system-ui, Arial, sans-serif;
+      font-size: 56px;
+      font-weight: 300;
+      color: var(--border);
+      line-height: 1;
+      pointer-events: none;
+      transition: color .25s;
+    }
+    .card:hover .card-num { color: var(--border-hi); }
+
+    /* ── Infos serveur ── */
+    .server-info {
+      margin-top: 24px;
+      padding: 18px 22px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+      animation: fadeUp .8s ease both;
+    }
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .info-key {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+    .info-val {
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text);
+    }
+    .dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      margin-right: 6px;
+      animation: pulse 2.5s ease infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .5; transform: scale(.85); }
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 64px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: .08em;
+      animation: fadeUp .9s ease both;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card:nth-child(1) { animation-delay: .05s; }
+    .card:nth-child(2) { animation-delay: .12s; }
+    .card:nth-child(3) { animation-delay: .19s; }
+    .card:nth-child(4) { animation-delay: .26s; }
+    .card:nth-child(5) { animation-delay: .33s; }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .wrap { padding: 40px 20px 60px; }
+      .logo { font-size: 32px; }
+      header { margin-bottom: 48px; }
+      .grid { grid-template-columns: 1fr; }
+      .server-info { flex-direction: column; gap: 16px; }
+      footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <div class="wrap">
+
+    <!-- En-tête -->
+    <header>
+      <div class="logo-row">
+        <div class="logo">dege<span>nerix</span></div>
+      </div>
+      <div class="tagline">Portail d'outils médicaux · Usage interne</div>
+      <div class="header-line"></div>
+    </header>
+
+    <!-- Annuaire & outils -->
+    <div class="section-label">Services en ligne</div>
+    <div class="grid">
+
+      <!-- Annuaire -->
+      <a class="card active" href="https://annuaire.degenerix.com" target="_self">
+        <span class="card-badge badge-live">En ligne</span>
+        <div class="card-icon">🗂</div>
+        <div class="card-title">Annuaire</div>
+        <div class="card-sub">Annuaire professionnel — accès rapide aux contacts et ressources référencées.</div>
+        <div class="card-url">annuaire.degenerix.com</div>
+        <div class="card-num">01</div>
+      </a>
+
+    </div>
+
+    <!-- Utilitaires médicaux -->
+    <div class="section-label">Utilitaires médicaux</div>
+    <div class="grid">
+
+      <!-- PCA -->
+      <a class="card utility" href="https://degenerix.com/outils/pca/" target="_self">
+        <span class="card-badge badge-v2">v2.0</span>
+        <div class="card-icon">💊</div>
+        <div class="card-title">PCA Soins Palliatifs</div>
+        <div class="card-sub">Prescription pompe PCA, convertisseur équianalg. SFAP — morphine, oxycodone, fentanyl TTS.</div>
+        <div class="card-url">degenerix.com/outils/pca/</div>
+        <div class="card-num">02</div>
+      </a>
+
+      <!-- STU -->
+      <a class="card utility" href="https://degenerix.com/outils/stu/" target="_self">
+        <span class="card-badge badge-v2">v2.0</span>
+        <div class="card-icon">🔬</div>
+        <div class="card-title">STU Antalgiques</div>
+        <div class="card-sub">Prescription antalgiques niveaux I, II, III — rédaction lettrée, équivalences opioïdes SFAP.</div>
+        <div class="card-url">degenerix.com/outils/stu/</div>
+        <div class="card-num">03</div>
+      </a>
+
+      <!-- BIO -->
+      <a class="card utility" href="https://degenerix.com/outils/bio/" target="_self">
+        <span class="card-badge badge-v2">v2.2</span>
+        <div class="card-icon">🧬</div>
+        <div class="card-title">BIO</div>
+        <div class="card-sub">Sélecteur d'examens biologiques — prescription par pathologie ou bilan personnalisé.</div>
+        <div class="card-url">degenerix.com/outils/bio/</div>
+        <div class="card-num">04</div>
+      </a>
+
+    </div>
+
+    <!-- Infos serveur -->
+    <div class="server-info">
+      <div class="info-item">
+        <span class="info-key">Serveur</span>
+        <span class="info-val"><span class="dot"></span>DigitalOcean VPS</span>
+      </div>
+      <div class="info-item">
+        <span class="info-key">Architecture</span>
+        <span class="info-val">Single-file · Zéro backend</span>
+      </div>
+      <div class="info-item">
+        <span class="info-key">Données patient</span>
+        <span class="info-val">Aucune collecte · RGPD neutre</span>
+      </div>
+      <div class="info-item">
+        <span class="info-key">Référentiel</span>
+        <span class="info-val">Ratios SFAP · Ord. sécurisée 8 j</span>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <span>degenerix.com · Usage interne</span>
+      <span>Vérifier systématiquement selon le contexte clinique</span>
+    </footer>
+
+  </div>
+</body>
+</html>
